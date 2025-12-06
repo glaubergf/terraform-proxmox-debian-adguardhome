@@ -1,0 +1,66 @@
+services:
+  adguardhome:
+    image: adguard/adguardhome:latest
+    container_name: adguardhome
+    restart: unless-stopped
+
+    # Proíbe escrita fora das pastas de volume (segurança)
+    read_only: true
+
+    cap_add:
+      - NET_BIND_SERVICE
+
+    security_opt:
+      - no-new-privileges:true
+
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "80:80/tcp"
+      - "443:443/tcp"
+      - "3000:3000/tcp"  # Necessário apenas para configuração inicial
+
+    environment:
+      TZ: "America/Sao_Paulo"
+
+    volumes:
+      # Configurações persistentes
+      - adguard_config:/opt/adguardhome/conf
+
+      # Cache / estatísticas / querylog
+      - adguard_work:/opt/adguardhome/work
+
+      # Logs persistentes
+      - adguard_logs:/var/log/adguardhome
+
+      # Necessário porque o container está read_only
+      - type: tmpfs
+        target: /tmp
+        tmpfs:
+          size: 20M
+      - type: tmpfs
+        target: /run
+        tmpfs:
+          size: 5M
+
+    networks:
+      - adguardhome-net
+
+    healthcheck:
+      test: ["CMD", "sh", "-c", "wget -q -O - http://127.0.0.1 && nc -z 127.0.0.1 53"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  adguard_config:
+    name: adguard_config
+  adguard_work:
+    name: adguard_work
+  adguard_logs:
+    name: adguard_logs
+
+networks:
+  adguardhome-net:
+    driver: bridge

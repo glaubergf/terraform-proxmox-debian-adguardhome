@@ -1,0 +1,13 @@
+# CONFIG .gitignore
+
+# Diretórios locais
+.terraform/
+security/
+
+# Arquivos locais
+configs/adguardhome-cloud-init.cfg
+configs/adguardhome-network-config.cfg
+.terraform.lock.hcl
+plano-adguardhome
+terraform.tfstate*
+terraform.tfvars

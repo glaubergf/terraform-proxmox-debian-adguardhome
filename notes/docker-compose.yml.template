@@ -1,0 +1,75 @@
+services:
+  adguardhome:
+    image: adguard/adguardhome:latest   # Imagem oficial do AdGuard Home
+    container_name: adguardhome         # Nome fixo do container (facilita logs e manutenção)
+    restart: unless-stopped             # Reinicia automaticamente caso pare ou falhe
+
+    # read_only evita que o container escreva fora das pastas de volume. 
+    # Ativa um nível extra de segurança. Mantenha habilitado.
+    read_only: true
+
+    # NET_BIND_SERVICE permite abrir portas < 1024 mesmo sem root.
+    cap_add:
+      - NET_BIND_SERVICE
+
+    # Impede elevação de privilégios dentro do container (mais segurança).
+    security_opt:
+      - no-new-privileges:true
+
+    ports:
+      - "53:53/tcp"             # DNS via TCP – obrigatório
+      - "53:53/udp"             # DNS via UDP – obrigatório
+
+      - "80:80/tcp"             # Interface web HTTP – recomendado para configuração inicial
+      - "443:443/tcp"           # Interface HTTPS / redirecionamentos
+
+      # Porta 3000: somente necessária no setup inicial.
+      # Após configurar o AdGuard Home pela primeira vez,
+      # você pode remover este mapeamento.
+      - "3000:3000/tcp"         # (opcional após setup)
+
+      # As portas abaixo são opcionais:
+      # Somente habilite se realmente for usar.
+
+      # - "853:853/tcp"         # (opcional) DNS-over-TLS (DoT)
+      # - "5443:5443/tcp"       # (opcional) DNS-over-HTTPS (DoH)
+      # - "784:784/udp"         # (opcional) DNS-over-QUIC
+      # - "8853:8853/udp"       # (opcional) DNS-over-QUIC alternativa
+      # - "67:67/udp"           # (opcional) DHCP Server
+      # - "68:68/udp"           # (opcional) DHCP Client
+
+    environment:
+      TZ: "America/Sao_Paulo"   # Ajusta timezone do container
+
+    volumes:
+      # Aqui ficam as configurações persistentes do AdGuard Home:
+      # listas de bloqueio, settings, backups, DHCP, etc.
+      - adguard_config:/opt/adguardhome/conf
+
+      # Cache, bancos internos e arquivos temporários
+      # também devem ser persistidos.
+      - adguard_work:/opt/adguardhome/work
+
+      # Logs persistentes, caso queira registrar sem perder dados no reboot.
+      - adguard_logs:/var/log/adguardhome
+
+    # healthcheck serve para o Docker saber se o AdGuard está saudável.
+    # Se falhar várias vezes, o Docker reinicia o container.
+    healthcheck:
+      test: ["CMD", "sh", "-c", "wget -q -O - http://127.0.0.1 && nc -z 127.0.0.1 53"]
+      interval: 30s        # Testa a cada 30 segundos
+      timeout: 10s         # Espera 10 segundos por resposta
+      retries: 5           # Após 5 falhas consecutivas é considerado morto
+      start_period: 30s    # Tempo para o AdGuard iniciar antes do healthcheck começar
+
+volumes:
+  adguard_config:          # Dados persistentes de configuração do AdGuard Home
+    name: adguard_config
+  adguard_work:            # Dados persistentes de trabalho do AdGuard Home
+    name: adguard_work
+  adguard_logs:            # Logs persistentes do AdGuard Home
+    name: adguard_logs
+
+networks:
+  adguardhome-net:         # Rede bridge dedicada para o AdGuard Home
+    driver: bridge
