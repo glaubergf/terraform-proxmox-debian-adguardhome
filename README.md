@@ -16,7 +16,7 @@ Atualizado: 06-12-2025
 
 # Servidor Debian AdGuard Home (Docker)
 
-![Image](https://github.com/glaubergf/terraform-proxmox-debian-adguardhome/blob/main/images/tf-pm-adguardhome.png)
+![Image](https://github.com/glaubergf/terraform-proxmox-debian-adguardhome/blob/main/images/tf-pm-adguardhome2.png)
 
 ![Image](https://github.com/glaubergf/terraform-proxmox-debian-adguardhome/blob/main/images/adguardhome.png)
 
